@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Câu hỏi dành cho bạn</title>
+    <style>
+        body {
+            background-color: #ffb6c1; /* Màu hồng nhạt */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            transition: background-color 0.1s;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border: 5px solid #ff69b4;
+            max-width: 80%;
+        }
+
+        h1 {
+            color: #ff1493;
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            background-color: #ff1493;
+        }
+
+        /* Jumpscare elements */
+        #jumpscare {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #jumpscare img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-content">
+        <h1>Bạn có phải người xinh đẹp nhất thế giới hay không?</h1>
+        <div class="buttons">
+            <button onclick="triggerJumpscare()">Yes</button>
+            <button onclick="triggerJumpscare()">No</button>
+        </div>
+    </div>
+
+    <div id="jumpscare">
+        <!-- Sử dụng bức ảnh kinh dị bạn đã tải lên -->
+        <img src="scary_image.png" alt="Scary Ghost">
+    </div>
+
+    <script>
+        // Tạo âm thanh kinh dị bằng Web Audio API để không cần tải file mp3
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function createJumpscareSound() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const duration = 2.5;
+
+            // Oscillator 1 (Tiếng ầm ầm trầm)
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(50, audioCtx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+
+            // Oscillator 2 (Tiếng thét chói tai)
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(4000, audioCtx.currentTime + 0.2);
+
+            // Oscillator 3 (Tiếng rít nhiễu)
+            const osc3 = audioCtx.createOscillator();
+            osc3.type = 'triangle';
+            osc3.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc3.frequency.linearRampToValueAtTime(2000, audioCtx.currentTime + 0.3);
+
+            // Nhiễu trắng (White noise cho cảm giác rùng rợn)
+            const bufferSize = audioCtx.sampleRate * duration;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            // Tạo độ méo tiếng (Distortion)
+            const waveShaper = audioCtx.createWaveShaper();
+            const curve = new Float32Array(44100);
+            for (let i = 0; i < 44100; i++) {
+                const x = (i * 2) / 44100 - 1;
+                curve[i] = (3 + 100) * x * 20 * (Math.PI / 180) / (Math.PI + 100 * Math.abs(x));
+            }
+            waveShaper.curve = curve;
+            waveShaper.oversample = '4x';
+
+            const gainNode = audioCtx.createGain();
+            
+            // Cường độ âm thanh (Bật lên cực to ngay lập tức, sau đó giảm dần)
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(3.5, audioCtx.currentTime + 0.05); // Âm thanh cực lớn
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            osc1.connect(waveShaper);
+            osc2.connect(waveShaper);
+            osc3.connect(waveShaper);
+            noise.connect(waveShaper);
+            
+            waveShaper.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            osc3.start();
+            noise.start();
+            
+            osc1.stop(audioCtx.currentTime + duration);
+            osc2.stop(audioCtx.currentTime + duration);
+            osc3.stop(audioCtx.currentTime + duration);
+            noise.stop(audioCtx.currentTime + duration);
+        }
+
+        function triggerJumpscare() {
+            // Ẩn nội dung chính
+            document.getElementById('main-content').style.display = 'none';
+            
+            // Hiện ảnh ma
+            document.getElementById('jumpscare').style.display = 'flex';
+
+            // Phát âm thanh
+            createJumpscareSound();
+
+            // Cố gắng bật toàn màn hình để tăng độ sợ hãi
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log(err));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen().catch(err => console.log(err));
+            }
+
+            // Tự động tắt và tải lại trang sau 3 giây
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
