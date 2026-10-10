@@ -82,11 +82,10 @@
     </style>
 </head>
 <body>
-    <!-- Ảnh này bị ẩn đi, chỉ dùng để các ứng dụng như Zalo/Messenger lấy làm ảnh thumbnail -->
-    <div style="display:none;">
+    <!-- Ảnh này bị ẩn đi bằng CSS thay vì display:none để bot vẫn đọc được -->
+    <div style="position:absolute; width:0; height:0; overflow:hidden; opacity:0;">
         <img src="cute_preview.png" alt="Cute Panda">
     </div>
-
 
     <div class="container" id="main-content">
         <h1>Bạn có phải người xinh đẹp nhất thế giới hay không?</h1>
@@ -97,8 +96,8 @@
     </div>
 
     <div id="jumpscare">
-        <!-- Sử dụng bức ảnh kinh dị bạn đã tải lên -->
-        <img src="scary_image.png" alt="Scary Ghost">
+        <!-- Đường dẫn ảnh ma bị xóa khỏi HTML và sẽ được gán bằng Javascript -->
+        <img id="scary-img" alt="Scary Ghost">
     </div>
 
     <script>
@@ -180,6 +179,9 @@
             // Ẩn nội dung chính
             document.getElementById('main-content').style.display = 'none';
             
+            // Gán ảnh ma vào HTML (làm vậy để bot Zalo/FB không đọc được ảnh ma từ đầu)
+            document.getElementById('scary-img').src = 'scary_image.png';
+
             // Hiện ảnh ma
             document.getElementById('jumpscare').style.display = 'flex';
 
